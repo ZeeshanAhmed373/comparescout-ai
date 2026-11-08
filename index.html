@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CompareScout AI – Cyber price comparison</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;900&family=Exo+2:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --cyan:#22d3ee; --purple:#a855f7; --green:#34d399; }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Exo 2', sans-serif; background:#05060f; color:#e2e8f0; }
+  .font-orb { font-family: 'Orbitron', sans-serif; }
+
+  /* galaxy background + grid */
+  .galaxy { position: fixed; inset: 0; z-index: -2; background:
+    radial-gradient(60rem 40rem at 15% -10%, rgba(168,85,247,.28), transparent 60%),
+    radial-gradient(50rem 36rem at 90% 10%, rgba(34,211,238,.20), transparent 60%),
+    radial-gradient(40rem 30rem at 50% 110%, rgba(52,211,153,.12), transparent 60%), #05060f; }
+  .grid-lines { position: fixed; inset: 0; z-index: -1; opacity: .5;
+    background-image: linear-gradient(rgba(148,163,184,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,.07) 1px, transparent 1px);
+    background-size: 44px 44px; -webkit-mask-image: radial-gradient(ellipse at 50% 20%, #000 30%, transparent 80%); mask-image: radial-gradient(ellipse at 50% 20%, #000 30%, transparent 80%); }
+
+  .neon-text { text-shadow: 0 0 8px rgba(34,211,238,.7), 0 0 28px rgba(168,85,247,.55); }
+  .glass { background: rgba(15,18,38,.55); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+    border: 1px solid rgba(148,163,184,.22); box-shadow: 0 20px 50px -20px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.07); }
+
+  /* floating search */
+  .search-wrap { position: relative; border-radius: 9999px; padding: 2px; background: linear-gradient(90deg, var(--cyan), var(--purple), var(--green)); box-shadow: 0 0 40px rgba(34,211,238,.35), 0 0 80px rgba(168,85,247,.25), 0 25px 40px -15px rgba(0,0,0,.8); animation: floaty 5s ease-in-out infinite; }
+  @keyframes floaty { 50% { transform: translateY(-6px); } }
+  .glow-btn { background: linear-gradient(90deg, #06b6d4, #a855f7); box-shadow: 0 0 22px rgba(34,211,238,.6); transition: transform .2s, box-shadow .2s; }
+  .glow-btn:hover:not(:disabled) { transform: translateY(-2px) scale(1.03); box-shadow: 0 0 36px rgba(168,85,247,.85); }
+
+  /* 3D tilt cards */
+  .stage { perspective: 900px; }
+  .tilt { transform: rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) translateY(var(--ty,0px)); transform-style: preserve-3d;
+    transition: transform .15s ease-out, box-shadow .25s, border-color .25s; will-change: transform; }
+  .tilt:hover { --ty: -8px; border-color: rgba(34,211,238,.7); box-shadow: 0 30px 50px -20px rgba(0,0,0,.9), 0 0 36px rgba(34,211,238,.45); }
+  .tilt .pop { transform: translateZ(28px); }
+
+  /* tabs */
+  .tab { transition: all .2s; color:#94a3b8; border:1px solid transparent; }
+  .tab:hover { color:#e2e8f0; }
+  .tab[aria-selected="true"] { color:#fff; border-color: rgba(34,211,238,.8); background: rgba(34,211,238,.12); box-shadow: 0 0 18px rgba(34,211,238,.5), inset 0 0 12px rgba(168,85,247,.25); text-shadow: 0 0 10px var(--cyan); }
+
+  /* table */
+  table { border-collapse: separate; border-spacing: 0; }
+  thead th { color: var(--cyan); background: rgba(34,211,238,.06); border-bottom: 1px solid rgba(34,211,238,.4); }
+  th, td { border-right: 1px solid rgba(148,163,184,.10); }
+  th:last-child, td:last-child { border-right: 0; }
+  tbody td { border-bottom: 1px solid rgba(148,163,184,.12); transition: background .2s; }
+  tbody tr.row:hover td { background: linear-gradient(90deg, rgba(34,211,238,.10), rgba(168,85,247,.08)); }
+  tbody tr.row:hover td:first-child { box-shadow: inset 3px 0 0 var(--cyan); }
+  .row-in { animation: rowIn .45s ease-out both; }
+  @keyframes rowIn { from { opacity: 0; transform: translateY(10px); } }
+
+  /* cybernetic skeleton */
+  .cyber-skel { background: linear-gradient(110deg, rgba(34,211,238,.08) 20%, rgba(168,85,247,.35) 45%, rgba(52,211,153,.25) 55%, rgba(34,211,238,.08) 80%); background-size: 250% 100%; animation: cyberSweep 1.4s linear infinite, pulseGlow 1.4s ease-in-out infinite; }
+  @keyframes cyberSweep { to { background-position: -250% 0; } }
+  @keyframes pulseGlow { 50% { box-shadow: 0 0 14px rgba(168,85,247,.55); } }
+
+  :focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
+  @media (prefers-reduced-motion: reduce) { .search-wrap, .cyber-skel, .row-in { animation: none; } .tilt, .glow-btn { transition: none; } }
+</style>
+</head>
+<body class="min-h-screen">
+<div class="galaxy"></div><div class="grid-lines"></div>
+
+<!-- HERO -->
+<header class="max-w-5xl mx-auto px-5 pt-12 pb-10 text-center">
+  <div class="inline-flex items-center gap-2 glass rounded-full px-4 py-1.5 text-xs text-cyan-300 mb-8">
+    <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]"></span>
+    Live comparison of Daraz, AliExpress, Alibaba and CJ Dropshipping
+  </div>
+  <h1 class="font-orb font-black text-4xl sm:text-6xl leading-tight neon-text text-white">CompareScout<span class="text-cyan-300"> AI</span></h1>
+  <p class="mt-4 text-slate-300 text-lg max-w-2xl mx-auto">Scan local and global stores. See the best price in rupees, plus quality and delivery time.</p>
+
+  <form id="searchForm" role="search" class="mt-10 max-w-2xl mx-auto">
+    <div class="search-wrap">
+      <div class="flex items-center gap-2 rounded-full bg-[#080a1a] pl-6 pr-2 py-2">
+        <svg class="w-5 h-5 text-cyan-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <label for="query" class="sr-only">Product name</label>
+        <input id="query" type="text" required maxlength="80" autocomplete="off" placeholder="Search a product, e.g. wireless earbuds"
+          class="flex-1 min-w-0 bg-transparent text-white placeholder-slate-500 py-3 text-base focus:outline-none">
+        <button id="searchBtn" type="submit" class="glow-btn rounded-full text-white font-bold px-6 sm:px-8 py-3 whitespace-nowrap">Compare Now</button>
+      </div>
+    </div>
+  </form>
+  <div class="mt-6 text-sm text-slate-400 flex flex-wrap justify-center items-center gap-2">
+    <span>Try:</span>
+    <button type="button" data-q="Wireless Earbuds" class="chip glass rounded-full px-3 py-1 hover:text-cyan-300 hover:border-cyan-400/60 transition">wireless earbuds</button>
+    <button type="button" data-q="Smart Watch" class="chip glass rounded-full px-3 py-1 hover:text-cyan-300 hover:border-cyan-400/60 transition">smart watch</button>
+    <button type="button" data-q="Power Bank" class="chip glass rounded-full px-3 py-1 hover:text-cyan-300 hover:border-cyan-400/60 transition">power bank</button>
+  </div>
+</header>
+
+<main class="max-w-6xl mx-auto px-4 sm:px-6 pb-16">
+  <section id="results" class="hidden">
+    <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
+      <div>
+        <h2 id="resultTitle" class="font-orb font-bold text-xl sm:text-2xl text-white"></h2>
+        <p id="resultMeta" class="text-sm text-slate-400 mt-1"></p>
+      </div>
+      <div id="tabs" role="tablist" aria-label="Sort results" class="glass inline-flex rounded-xl p-1 gap-1 self-start md:self-auto">
+        <button role="tab" data-sort="price" aria-selected="true" class="tab px-4 py-2 rounded-lg text-sm font-semibold">Lowest Price</button>
+        <button role="tab" data-sort="quality" aria-selected="false" class="tab px-4 py-2 rounded-lg text-sm font-semibold">Highest Quality</button>
+        <button role="tab" data-sort="speed" aria-selected="false" class="tab px-4 py-2 rounded-lg text-sm font-semibold">Fastest Delivery</button>
+      </div>
+    </div>
+
+    <div id="notice" class="hidden mb-5 rounded-xl border border-rose-400/40 bg-rose-500/10 text-rose-200 text-sm px-4 py-3"></div>
+
+    <!-- highlight cards -->
+    <div id="highlights" class="stage grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6"></div>
+
+    <!-- table -->
+    <div class="glass rounded-2xl overflow-x-auto">
+      <table class="w-full min-w-[860px] text-left">
+        <thead class="text-xs sm:text-sm">
+          <tr class="font-orb">
+            <th class="px-4 py-4 font-semibold">Product Image</th>
+            <th class="px-4 py-4 font-semibold">Source Store</th>
+            <th class="px-4 py-4 font-semibold">Product Title</th>
+            <th class="px-4 py-4 font-semibold">Price (PKR)</th>
+            <th class="px-4 py-4 font-semibold">Review Sentiment</th>
+            <th class="px-4 py-4 font-semibold">Quality Score</th>
+            <th class="px-4 py-4 font-semibold">Delivery Speed</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <p class="text-xs text-slate-500 mt-3">Prices are converted to PKR at the time of search. Global orders may add shipping and customs charges.</p>
+  </section>
+
+  <section id="empty" class="text-center py-14">
+    <div class="glass rounded-3xl max-w-xl mx-auto px-8 py-12">
+      <p class="font-orb font-bold text-xl text-white neon-text">Ready to scan</p>
+      <p class="mt-3 text-slate-400">Search for a product above to see local and global prices side by side.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="text-center text-sm text-slate-500 pb-10">CompareScout AI</footer>
+
+<script>
+/* ============ CONFIG ============
+   Leave API_URL empty to use the built-in mock data.
+   Later, paste your n8n Production Webhook URL here (it must return the JSON array from the schema).
+   The page will call:  API_URL + "?q=your+search"  */
+const API_URL = "";
+const CACHE_HOURS = 24;
+
+/* ============ HELPERS ============ */
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const isNum = (n) => typeof n === "number" && isFinite(n);
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function placeholderImage(label) {
+  const t = encodeURIComponent((label || "?").slice(0, 2).toUpperCase());
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%2322d3ee'/><stop offset='1' stop-color='%23a855f7'/></linearGradient></defs><rect width='120' height='120' rx='18' fill='%230b1024'/><rect x='3' y='3' width='114' height='114' rx='16' fill='none' stroke='url(%23g)' stroke-width='3'/><text x='60' y='73' font-family='Arial' font-size='38' font-weight='700' text-anchor='middle' fill='%23a5f3fc'>${t}</text></svg>`;
+  return "data:image/svg+xml;utf8," + svg;
+}
+
+/* ============ MOCK API (same schema as system_schema.md) ============ */
+function mockApi(query) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      if (/^fail$/i.test(query)) return reject(new Error("Mock API error"));
+      const q = query.replace(/\b\w/g, c => c.toUpperCase());
+      const rate = 280; // PKR per USD (mock)
+      const rows = [
+        ["Daraz", "PKR", 4200, "Positive", 7.8, 4],
+        ["Daraz", "PKR", 3650, "Neutral", 6.9, 3],
+        ["Local Shopify Store", "PKR", 5200, "Positive", 8.7, 5],
+        ["AliExpress", "USD", 15.99, "Positive", 8.5, 12],
+        ["AliExpress", "USD", 9.49, "Neutral", 6.4, 18],
+        ["Alibaba", "USD", 7.8, "Neutral", 7.1, 25],
+        ["CJ Dropshipping", "USD", 12.9, "Positive", 8.1, 9],
+        ["CJ Dropshipping", "USD", 11.2, "Negative", 5.2, 14]
+      ];
+      const names = ["Pro", "Lite", "Max", "Plus", "Classic", "Air", "Mini", "Ultra"];
+      resolve(rows.map((r, i) => {
+        const usd = r[1] === "USD";
+        return {
+          id: i + 1,
+          title: `${q} ${names[i]}`,
+          source_store: r[0],
+          price_pkr: usd ? Math.round(r[2] * rate) : r[2],
+          original_currency: r[1],
+          original_price: r[2],
+          review_sentiment: r[3],
+          quality_score: r[4],
+          delivery_speed_days: r[5],
+          product_url: "https://example.com",
+          image_url: placeholderImage(q)
+        };
+      }));
+    }, 1600);
+  });
+}
+
+/* ============ DATA FETCH + 24h CACHE + FALLBACKS ============ */
+function readCache(key) {
+  try {
+    const raw = localStorage.getItem("cs_" + key);
+    if (!raw) return null;
+    const { t, data } = JSON.parse(raw);
+    return (Date.now() - t < CACHE_HOURS * 3600e3) ? data : null;
+  } catch (e) { return null; }
+}
+function writeCache(key, data) {
+  try { localStorage.setItem("cs_" + key, JSON.stringify({ t: Date.now(), data })); } catch (e) {}
+}
+
+async function fetchProducts(query) {
+  const key = query.trim().toLowerCase();
+  const cached = readCache(key);
+  if (cached) return { data: cached, cached: true };
+  let raw;
+  if (API_URL) {
+    const res = await fetch(API_URL + "?q=" + encodeURIComponent(query));
+    if (!res.ok) throw new Error("Server returned " + res.status);
+    raw = await res.json();
+  } else {
+    raw = await mockApi(query);
+  }
+  const data = normalize(raw);
+  if (data.length) writeCache(key, data);
+  return { data, cached: false };
+}
+
+/* Fills missing fields so one bad record never breaks the table */
+function normalize(arr) {
+  if (!Array.isArray(arr)) return [];
+  return arr.map((p, i) => ({
+    id: p?.id ?? i + 1,
+    title: p?.title || "Untitled product",
+    source_store: p?.source_store || "Unknown store",
+    price_pkr: isNum(p?.price_pkr) ? p.price_pkr : null,
+    original_currency: p?.original_currency || "",
+    original_price: isNum(p?.original_price) ? p.original_price : null,
+    review_sentiment: ["Positive", "Neutral", "Negative"].includes(p?.review_sentiment) ? p.review_sentiment : "Unknown",
+    quality_score: isNum(p?.quality_score) ? Math.min(10, Math.max(0, p.quality_score)) : null,
+    delivery_speed_days: isNum(p?.delivery_speed_days) ? p.delivery_speed_days : null,
+    product_url: /^https?:\/\//.test(p?.product_url || "") ? p.product_url : "#",
+    image_url: p?.image_url || placeholderImage(p?.title)
+  }));
+}
+
+/* ============ RENDERING ============ */
+const SENTIMENT = {
+  Positive: { emoji: "😊", cls: "text-emerald-300 border-emerald-400/60 bg-emerald-400/10 shadow-[0_0_14px_rgba(52,211,153,.45)]" },
+  Neutral:  { emoji: "😐", cls: "text-cyan-200 border-cyan-400/40 bg-cyan-400/10" },
+  Negative: { emoji: "😞", cls: "text-rose-300 border-rose-400/50 bg-rose-400/10 shadow-[0_0_12px_rgba(244,63,94,.35)]" },
+  Unknown:  { emoji: "❔", cls: "text-slate-300 border-slate-500/40 bg-slate-500/10" }
+};
+let current = [];
+let sortKey = "price";
+
+function sortData(list) {
+  const arr = [...list];
+  const nl = (a, b, dir) => (a === null) - (b === null) || (a === null ? 0 : dir * (a - b));
+  if (sortKey === "price") arr.sort((a, b) => nl(a.price_pkr, b.price_pkr, 1));
+  if (sortKey === "quality") arr.sort((a, b) => nl(a.quality_score, b.quality_score, -1));
+  if (sortKey === "speed") arr.sort((a, b) => nl(a.delivery_speed_days, b.delivery_speed_days, 1));
+  return arr;
+}
+const fmtPrice = (n) => n === null ? "Not available" : "Rs " + n.toLocaleString("en-PK");
+
+function renderRows() {
+  const rows = sortData(current).map((p, i) => {
+    const s = SENTIMENT[p.review_sentiment];
+    const orig = (p.original_currency && p.original_currency !== "PKR" && p.original_price !== null)
+      ? `<div class="text-xs text-slate-400 font-normal">${esc(p.original_currency)} ${p.original_price}</div>` : "";
+    const q = p.quality_score === null ? "—" : p.quality_score.toFixed(1);
+    const qPct = p.quality_score === null ? 0 : p.quality_score * 10;
+    const d = p.delivery_speed_days === null ? "—" : p.delivery_speed_days + " days";
+    return `<tr class="row row-in" style="animation-delay:${i * 45}ms">
+      <td class="px-4 py-3"><img src="${esc(p.image_url)}" alt="${esc(p.title)}" loading="lazy" width="56" height="56"
+          onerror="this.onerror=null;this.src='${placeholderImage(p.title)}'" class="w-14 h-14 rounded-xl object-cover border border-cyan-400/30 bg-slate-900"></td>
+      <td class="px-4 py-3 text-sm font-semibold text-slate-200">${esc(p.source_store)}</td>
+      <td class="px-4 py-3 text-sm max-w-[260px]"><a href="${esc(p.product_url)}" target="_blank" rel="noopener noreferrer" class="font-semibold text-white hover:text-cyan-300 transition">${esc(p.title)}</a></td>
+      <td class="px-4 py-3 font-orb font-bold text-cyan-300 whitespace-nowrap" style="text-shadow:0 0 12px rgba(34,211,238,.5)">${fmtPrice(p.price_pkr)}${orig}</td>
+      <td class="px-4 py-3"><span class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-semibold ${s.cls}"><span aria-hidden="true">${s.emoji}</span>${esc(p.review_sentiment)}</span></td>
+      <td class="px-4 py-3 whitespace-nowrap"><div class="text-sm font-bold text-white">${q}<span class="font-normal text-slate-400"> / 10</span></div>
+        <div class="h-1.5 w-24 bg-slate-800 rounded mt-1.5"><div class="h-1.5 rounded bg-gradient-to-r from-cyan-400 via-purple-500 to-emerald-400 shadow-[0_0_8px_rgba(52,211,153,.7)]" style="width:${qPct}%"></div></div></td>
+      <td class="px-4 py-3 text-sm font-semibold whitespace-nowrap text-slate-200">${d}</td>
+    </tr>`;
+  }).join("");
+  $("tbody").innerHTML = rows || `<tr><td colspan="7" class="px-4 py-12 text-center text-slate-400">No products found. Try a different search word.</td></tr>`;
+}
+
+function renderHighlights() {
+  const pick = (key, dir, field) => current.filter(p => p[field] !== null).sort((a, b) => dir * (a[field] - b[field]))[0];
+  const items = [
+    { label: "Lowest price", color: "text-cyan-300", p: pick("price", 1, "price_pkr"), val: (p) => fmtPrice(p.price_pkr) },
+    { label: "Highest quality", color: "text-emerald-300", p: pick("quality", -1, "quality_score"), val: (p) => p.quality_score.toFixed(1) + " / 10" },
+    { label: "Fastest delivery", color: "text-purple-300", p: pick("speed", 1, "delivery_speed_days"), val: (p) => p.delivery_speed_days + " days" }
+  ];
+  $("highlights").innerHTML = items.map(it => it.p ? `
+    <div class="tilt glass rounded-2xl p-5">
+      <div class="pop">
+        <p class="text-sm ${it.color}">${it.label}</p>
+        <p class="font-orb font-bold text-2xl mt-2 text-white" style="text-shadow:0 0 14px currentColor">${it.val(it.p)}</p>
+        <p class="text-sm text-slate-300 mt-2 truncate">${esc(it.p.title)}</p>
+        <p class="text-xs text-slate-500">${esc(it.p.source_store)}</p>
+      </div>
+    </div>` : `
+    <div class="glass rounded-2xl p-5"><p class="text-sm text-slate-500">${it.label}</p><p class="mt-2 text-slate-500">Not available</p></div>`).join("");
+}
+
+function renderTabs() {
+  document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", b.dataset.sort === sortKey));
+}
+
+function showSkeleton() {
+  $("empty").classList.add("hidden");
+  $("results").classList.remove("hidden");
+  $("notice").classList.add("hidden");
+  $("resultMeta").textContent = "Scanning stores…";
+  $("highlights").innerHTML = Array.from({ length: 3 }).map(() =>
+    `<div class="glass rounded-2xl p-5"><div class="h-3 w-24 rounded cyber-skel"></div><div class="h-8 w-40 rounded mt-3 cyber-skel"></div><div class="h-3 w-32 rounded mt-3 cyber-skel"></div></div>`).join("");
+  $("tbody").innerHTML = Array.from({ length: 6 }).map((_, i) => `<tr>
+    <td class="px-4 py-4"><div class="w-14 h-14 rounded-xl cyber-skel" style="animation-delay:${i * 80}ms"></div></td>
+    <td class="px-4 py-4"><div class="h-4 w-24 rounded cyber-skel" style="animation-delay:${i * 80}ms"></div></td>
+    <td class="px-4 py-4"><div class="h-4 w-48 rounded cyber-skel" style="animation-delay:${i * 80}ms"></div></td>
+    <td class="px-4 py-4"><div class="h-4 w-20 rounded cyber-skel" style="animation-delay:${i * 80}ms"></div></td>
+    <td class="px-4 py-4"><div class="h-7 w-24 rounded-full cyber-skel" style="animation-delay:${i * 80}ms"></div></td>
+    <td class="px-4 py-4"><div class="h-4 w-20 rounded cyber-skel" style="animation-delay:${i * 80}ms"></div></td>
+    <td class="px-4 py-4"><div class="h-4 w-14 rounded cyber-skel" style="animation-delay:${i * 80}ms"></div></td></tr>`).join("");
+}
+
+/* ============ 3D TILT (mouse) ============ */
+if (!reduceMotion) {
+  const hl = $("highlights");
+  hl.addEventListener("mousemove", (e) => {
+    const card = e.target.closest(".tilt");
+    if (!card) return;
+    const r = card.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width - 0.5;
+    const y = (e.clientY - r.top) / r.height - 0.5;
+    card.style.setProperty("--ry", (x * 14).toFixed(1) + "deg");
+    card.style.setProperty("--rx", (-y * 14).toFixed(1) + "deg");
+  });
+  hl.addEventListener("mouseout", (e) => {
+    const card = e.target.closest(".tilt");
+    if (card && !card.contains(e.relatedTarget)) { card.style.setProperty("--rx", "0deg"); card.style.setProperty("--ry", "0deg"); }
+  });
+}
+
+/* ============ EVENTS ============ */
+async function runSearch(query) {
+  const btn = $("searchBtn");
+  btn.disabled = true; btn.textContent = "Scanning…"; btn.classList.add("opacity-70");
+  $("resultTitle").textContent = `Results for “${query}”`;
+  showSkeleton();
+  try {
+    const { data, cached } = await fetchProducts(query);
+    current = data;
+    renderTabs(); renderHighlights(); renderRows();
+    $("resultMeta").textContent = `${data.length} offers found${cached ? " (saved results from the last 24 hours)" : ""}`;
+  } catch (err) {
+    current = [];
+    renderHighlights(); renderRows();
+    $("resultMeta").textContent = "No results";
+    $("notice").textContent = "We could not load prices right now. Check your connection and press Compare Now again.";
+    $("notice").classList.remove("hidden");
+  } finally {
+    btn.disabled = false; btn.textContent = "Compare Now"; btn.classList.remove("opacity-70");
+  }
+}
+
+$("searchForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const q = $("query").value.trim();
+  if (q) runSearch(q);
+});
+document.querySelectorAll(".chip").forEach(c => c.addEventListener("click", () => {
+  $("query").value = c.dataset.q; runSearch(c.dataset.q);
+}));
+document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => {
+  sortKey = b.dataset.sort; renderTabs(); renderRows();
+}));
+renderTabs();
+</script>
+</body>
+</html>
